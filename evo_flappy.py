@@ -1,6 +1,9 @@
 import random
-import numpy
+import numpy as np
 import argparse
+import torch
+import time
+import torch.nn as nn
 
 import logging
 logging.getLogger().setLevel(logging.INFO)
@@ -16,13 +19,27 @@ from deap import tools
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+def create_model(device):
+    model = nn.Sequential(nn.Linear(3, 4), nn.ReLU(), nn.Linear(4, 2), nn.LogSoftmax())
+    for parameters in model.parameters():
+        parameters.requires_grad = False
+    model = model.to(device)
+    return model
 
-def generate_individual(individual):
-    # TODO
-    return individual(numpy.random.rand(10))
+
+def generate_individual(individual, model):
+    weights = []
+    for parameter in model.parameters():
+        if len(parameter.size()) == 1:
+            parameter_dim = parameter.size()[0]
+            weights.append(np.random.rand(parameter_dim) * np.sqrt(1 / (parameter_dim)))
+        else:
+            parameter_dim_0, parameter_dim_1 = parameter.size()
+            weights.append(np.random.rand(parameter_dim_0, parameter_dim_1) * np.sqrt(1 / (parameter_dim_0 + parameter_dim_1)))
+    return individual(np.array(weights))
 
 
-def evaluate_individual(individual):
+def evaluate_individual(model, individual):
     # TODO
     return 1,
 
@@ -47,17 +64,28 @@ def main():
     MU = args.MU
     NGEN = args.NGEN
 
+    GPU_ID = 0
+    DEVICE = torch.device("cuda:{}".format(GPU_ID) if torch.cuda.is_available() else "cpu")
+    if str(DEVICE) == "cpu":
+        logging.warning("Running model on CPU")
+    else:
+        logging.info("Running model on GPU {}".format(GPU_ID))
+
+    logging.info("Creating Neural Network model")
+    model = create_model(DEVICE)
+
     creator.create("FitnessMax", base.Fitness, weights = (1.0, ))
-    creator.create("Individual", numpy.ndarray, fitness = creator.FitnessMax)
+    creator.create("Individual", np.ndarray, fitness = creator.FitnessMax)
 
     toolbox = base.Toolbox()
-    toolbox.register("individual", generate_individual, creator.Individual)
+    toolbox.register("individual", generate_individual, creator.Individual, model)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
     toolbox.register("select", tools.selRandom, k = 3)
-    toolbox.register("evaluate", evaluate_individual)
+    toolbox.register("evaluate", evaluate_individual, model)
 
     pop = toolbox.population(n = MU)
-    hof = tools.HallOfFame(1, similar = numpy.array_equal)
+
+    hof = tools.HallOfFame(1, similar = np.array_equal)
 
     # Evaluate the individuals
     fitnesses = toolbox.map(toolbox.evaluate, pop)
@@ -65,7 +93,6 @@ def main():
         ind.fitness.values = fit
 
     for generation in tqdm(range(1, NGEN), total = NGEN):
-
         for index_agent, agent in enumerate(pop):
             a, b, c = toolbox.select(pop)
             y = toolbox.clone(agent)
@@ -73,6 +100,7 @@ def main():
             for i, value in enumerate(agent):
                 if i == index or random.random() < CR:
                     y[i] = a[i] + F * (b[i] - c[i])
+                    return
             y.fitness.values = toolbox.evaluate(y)
             if y.fitness > agent.fitness:
                 pop[index_agent] = y
