@@ -19,10 +19,11 @@ from deap import tools
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def create_model(device):
-    model = nn.Sequential(nn.Linear(3, 4), nn.ReLU(), nn.Linear(4, 2), nn.LogSoftmax())
-    for parameters in model.parameters():
-        parameters.requires_grad = False
+    model = nn.Sequential(nn.Linear(3, 4), nn.ReLU(), nn.Linear(4, 2), nn.LogSoftmax(dim = 0))
+    for parameter in model.parameters():
+        parameter.requires_grad = False
     model = model.to(device)
     return model
 
@@ -40,7 +41,9 @@ def generate_individual(individual, model):
 
 
 def evaluate_individual(model, individual):
-    # TODO
+    for parameter, numpy_array in zip(model.parameters(), individual):
+        parameter.data = torch.from_numpy(numpy_array)
+    output_tensor = model(torch.tensor([0.1, 0.2, 0.3], dtype = torch.double))
     return 1,
 
 # ----------------------------------------------------------------------------------------------------------------------
