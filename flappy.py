@@ -63,7 +63,12 @@ def main():
     parser = argparse.ArgumentParser("flappy.py")
     parser.add_argument('--fps', type=int, default=60, help='number of frames per second')
     parser.add_argument('--dump_hitmasks', action='store_true', help='dump hitmasks to file and exit')
+    parser.add_argument('--seed', default=-1, help='set the random seed')
     args = parser.parse_args()
+
+    # Get and set random seed
+    if args.seed != -1:
+        random.seed(args.seed)
 
     FPS = args.fps
 
