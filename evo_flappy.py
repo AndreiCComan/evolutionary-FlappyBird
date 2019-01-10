@@ -52,6 +52,7 @@ def evaluate_individual(model, args, individual):
 def main():
 
     parser = argparse.ArgumentParser("evo_flappy.py")
+    parser.add_argument("--EA", type = str, default = "simple", help = "Type of Evolutionary algorithm which will be used.")
     parser.add_argument("--CR", type = float, default = 0.25, help = "Crossover probability")
     parser.add_argument("--F", type = float, default = 1, help = "Differential weight")
     parser.add_argument("--MU", type = int, default = 300, help = "Population size")
@@ -64,6 +65,7 @@ def main():
 
     MODE_AGENT = args.MODE_AGENT
     MODE_LEARN = args.MODE_LEARN
+    EA = args.EA
 
     if not MODE_AGENT:
 
