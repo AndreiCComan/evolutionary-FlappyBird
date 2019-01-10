@@ -82,10 +82,7 @@ class TorchModel(EvolutionaryModel):
 
         assert self.MODE_AGENT
 
-        pool = multiprocessing.Pool()
-
         toolbox = base.Toolbox()
-        toolbox.register("map", pool.map)
         toolbox.register("individual", self.generate_individual, creator.Individual, self.model)
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
         toolbox.register("select", tools.selRandom, k=3)
@@ -98,11 +95,17 @@ class TorchModel(EvolutionaryModel):
             for index_agent, agent in tqdm(enumerate(pop), total=len(pop)):
                 a, b, c = toolbox.select(pop)
                 y = toolbox.clone(agent)
-                index = random.randrange(10)
+                index = random.randrange(len(agent))
                 for i, value in enumerate(agent):
                     if i == index or random.random() < self.CR:
                         y[i] = a[i] + self.F * (b[i] - c[i])
                 y.fitness.values = toolbox.evaluate(y)
+                #for layer_index, layer_weights in enumerate(y):
+                #    index = random.randrange(layer_weights.shape[0])
+                #    for i, value in enumerate(layer_weights):
+                #        if i == index or random.random() < self.CR:
+                #            y[layer_index][i] = a[layer_index][i] + self.F * (b[layer_index][i] - c[layer_index][i])
+                #y.fitness.values = toolbox.evaluate(y)
                 if y.fitness > agent.fitness:
                     pop[index_agent] = y
             hof.update(pop)
