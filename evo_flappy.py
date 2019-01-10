@@ -46,7 +46,7 @@ def evaluate_individual(model, args, individual):
     for parameter, numpy_array in zip(model.parameters(), individual):
         parameter.data = torch.from_numpy(numpy_array)
 
-    return play_with_screen(args.MODE_AGENT, model = model)
+    return play_with_screen(args.MODE_AGENT, args.MODE_LEARN, model = model)
 
 
 def main():
@@ -113,6 +113,10 @@ def main():
             hof.update(pop)
 
         logging.info("Best individual is {} {}".format(hof[0], hof[0].fitness.values[0]))
+
+        # let the best individual play
+        args.MODE_LEARN = False
+        evaluate_individual(model, args, hof[0])
 
 
 if __name__ == "__main__":
