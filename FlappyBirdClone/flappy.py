@@ -1,15 +1,17 @@
 from itertools import cycle
 import random
+import numpy as np
 import sys
 import torch
 import pygame
 from pygame.locals import *
 
+SCORE_LIMIT = 150
 FPS = 60
 SCREENWIDTH  = 288
 SCREENHEIGHT = 512
 # amount by which base can maximum shift to left
-PIPEGAPSIZE  = 130 # gap between upper and lower part of pipe
+PIPEGAPSIZE  = 240 # gap between upper and lower part of pipe
 BASEY        = SCREENHEIGHT * 0.79
 # image, sound and hitmask  dicts
 IMAGES, SOUNDS, HITMASKS = {}, {}, {}
@@ -142,7 +144,7 @@ def play_with_screen(mode_agent = False, mode_learn = False, model = None):
         crashInfo = mainGame(movementInfo)
         showGameOverScreen(crashInfo)
 
-        if MODE_AGENT and MODE_LEARN:
+        if (MODE_AGENT and MODE_LEARN) or (MODE_AGENT and crashInfo["score"] > SCORE_LIMIT):
             return crashInfo["check"],
 
 
@@ -257,13 +259,13 @@ def mainGame(movementInfo):
                     SOUNDS['wing'].play()
 
         if MODE_AGENT:
-            # TODO
             if -playerx + lowerPipes[0]["x"] > -30:
                 myPipe = lowerPipes[0]
             else:
                 myPipe = lowerPipes[1]
 
             features = [-playerx + myPipe["x"], - playery + myPipe["y"], playerVelY]
+            features = np.array(features, dtype = float)
             output_tensor = MODEL(torch.tensor(features, dtype = torch.double))
             jump = torch.argmax(output_tensor).item()
             if jump:
@@ -275,7 +277,7 @@ def mainGame(movementInfo):
         # check for crash here
         crashTest = checkCrash({'x': playerx, 'y': playery, 'index': playerIndex},
                                upperPipes, lowerPipes)
-        if crashTest[0]:
+        if crashTest[0] or (MODE_AGENT and score > SCORE_LIMIT):
             return {
                 'y': playery,
                 'groundCrash': crashTest[1],

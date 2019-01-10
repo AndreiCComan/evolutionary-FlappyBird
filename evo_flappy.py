@@ -65,9 +65,19 @@ def main():
     MODE_AGENT = args.MODE_AGENT
     MODE_LEARN = args.MODE_LEARN
 
-    if not MODE_LEARN:
+    if not MODE_AGENT:
+
         play_with_screen(mode_agent = MODE_AGENT)
+
+    elif MODE_AGENT and not MODE_LEARN:
+
+        model = create_model(args.DEVICE)
+        model.load_state_dict(torch.load("model.pt"))
+        model = model.double()
+        play_with_screen(mode_agent = MODE_AGENT, model = model)
+
     else:
+
         assert args.MODE_AGENT
 
         CR = args.CR
@@ -92,12 +102,6 @@ def main():
         pop = toolbox.population(n = MU)
         hof = tools.HallOfFame(1, similar = np.array_equal)
 
-        # Evaluate the individuals
-        fitnesses = toolbox.map(toolbox.evaluate, pop)
-
-        for ind, fit in zip(pop, fitnesses):
-            ind.fitness.values = fit
-
         for _ in tqdm(range(1, NGEN), total = NGEN):
             for index_agent, agent in tqdm(enumerate(pop), total = len(pop)):
                 a, b, c = toolbox.select(pop)
@@ -106,17 +110,17 @@ def main():
                 for i, value in enumerate(agent):
                     if i == index or random.random() < CR:
                         y[i] = a[i] + F * (b[i] - c[i])
-                        return
                 y.fitness.values = toolbox.evaluate(y)
                 if y.fitness > agent.fitness:
                     pop[index_agent] = y
             hof.update(pop)
 
-        logging.info("Best individual is {} {}".format(hof[0], hof[0].fitness.values[0]))
+        best_individual = hof[0]
+        for parameter, numpy_array in zip(model.parameters(), best_individual):
+            parameter.data = torch.from_numpy(numpy_array)
 
-        # let the best individual play
-        args.MODE_LEARN = False
-        evaluate_individual(model, args, hof[0])
+        torch.save(model.state_dict(), "model.pt")
+        play_with_screen(mode_agent = MODE_AGENT, model = model)
 
 
 if __name__ == "__main__":
