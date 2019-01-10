@@ -79,16 +79,17 @@ class TorchModel(EvolutionaryModel):
         return play_with_screen(self.MODE_AGENT, self.MODE_LEARN, model=model)
 
     def evolve(self):
+
         assert self.MODE_AGENT
 
         pool = multiprocessing.Pool()
 
         toolbox = base.Toolbox()
         toolbox.register("map", pool.map)
-        toolbox.register("individual", self.generate_individual, creator.Individual, model)
+        toolbox.register("individual", self.generate_individual, creator.Individual, self.model)
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
         toolbox.register("select", tools.selRandom, k=3)
-        toolbox.register("evaluate", self.evaluate_individual, model)
+        toolbox.register("evaluate", self.evaluate_individual, self.model)
 
         pop = toolbox.population(n=self.MU)
         hof = tools.HallOfFame(1, similar=np.array_equal)
@@ -107,7 +108,8 @@ class TorchModel(EvolutionaryModel):
             hof.update(pop)
 
         best_individual = hof[0]
-        for parameter, numpy_array in zip(model.parameters(), best_individual):
+
+        for parameter, numpy_array in zip(self.model.parameters(), best_individual):
             parameter.data = torch.from_numpy(numpy_array)
 
 
