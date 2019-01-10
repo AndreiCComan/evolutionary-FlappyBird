@@ -105,7 +105,7 @@ class TorchModel(EvolutionaryModel):
                 y.fitness.values = toolbox.evaluate(y)
                 if y.fitness > agent.fitness:
                     pop[index_agent] = y
-            hof.update(pop)
+            hof.update(pop)""
 
         best_individual = hof[0]
 
