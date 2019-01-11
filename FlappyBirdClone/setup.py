@@ -26,7 +26,7 @@ setup(
     },
 
     windows = [{
-        'script': "flappy.py",
+        'script': "flappy_screen.py",
         'icon_resources': [
             (1, 'flappy.ico')
         ]

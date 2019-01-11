@@ -52,7 +52,7 @@ PIPES_LIST = (
 )
 
 
-def play_with_screen(mode_agent = False, mode_learn = False, model = None):
+def play(mode_agent = False, mode_learn = False, model = None):
     global MODE_AGENT, MODE_LEARN, MODEL
 
     MODE_AGENT = mode_agent
@@ -259,20 +259,20 @@ def mainGame(movementInfo):
                     SOUNDS['wing'].play()
 
         if MODE_AGENT:
-            if -playerx + lowerPipes[0]["x"] > -30:
+            if -playerx + lowerPipes[0]['x'] > -30:
                 myPipe = lowerPipes[0]
             else:
                 myPipe = lowerPipes[1]
 
-            features = [-playerx + myPipe["x"], - playery + myPipe["y"], playerVelY]
+            features = [-playerx + myPipe['x'], - playery + myPipe['y'], playerVelY]
             features = np.array(features, dtype = float)
             output_tensor = MODEL(torch.tensor(features, dtype = torch.double))
             jump = torch.argmax(output_tensor).item()
             if jump:
-                if playery > -2 * IMAGES["player"][0].get_height():
+                if playery > -2 * IMAGES['player'][0].get_height():
                     playerVelY = playerFlapAcc
                     playerFlapped = True
-                    SOUNDS["wing"].play()
+                    SOUNDS['wing'].play()
 
         # check for crash here
         crashTest = checkCrash({'x': playerx, 'y': playery, 'index': playerIndex},

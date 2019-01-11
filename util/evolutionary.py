@@ -13,7 +13,8 @@ logging.getLogger().setLevel(logging.INFO)
 import random
 import multiprocessing
 
-from FlappyBirdClone.flappy import play_with_screen
+import FlappyBirdClone.flappy_screen as flappy_screen
+import FlappyBirdClone.flappy_no_screen as flappy_no_screen
 
 
 """
@@ -31,6 +32,7 @@ class EvolutionaryModel:
         self.MODE_AGENT = args.MODE_AGENT
         self.MODE_LEARN = args.MODE_LEARN
         self.NCPU = args.NCPU
+        self.MODE_NO_SCREEN = args.MODE_NO_SCREEN
 
     def create_model(self, device):
         pass
@@ -88,10 +90,15 @@ class TorchModel(EvolutionaryModel):
         for parameter, numpy_array in zip(model.parameters(), individual):
             parameter.data = torch.from_numpy(numpy_array)
 
-        return play_with_screen(self.MODE_AGENT, self.MODE_LEARN, model=model)
+        if not self.MODE_NO_SCREEN:
+            score = flappy_screen.play(self.MODE_AGENT, self.MODE_LEARN, model=model)
+        else:
+            score = flappy_no_screen.play(model)
 
-    def differential_evolution(self, index_agent, agent):
-        a, b, c = self.toolbox.select(self.pop)
+        return score
+
+    def differential_evolution(self, index_agent, agent, population):
+        a, b, c = self.toolbox.select(population)
         y = self.toolbox.clone(agent)
         index = random.randrange(len(agent))
 
@@ -107,18 +114,18 @@ class TorchModel(EvolutionaryModel):
 
         y.fitness.values = self.toolbox.evaluate(y)
         if y.fitness > agent.fitness:
-            self.pop[index_agent] = y
-        return
+            return y
+        else:
+            return agent
 
     def evolve(self):
 
         assert self.MODE_AGENT
 
-        for _ in tqdm(range(1, self.NGEN), total=self.NGEN):
-            agents = [(agent_index, agent) for agent_index, agent in enumerate(self.pop)]
+        for _ in tqdm(range(self.NGEN), total=self.NGEN):
+            agents = [(agent_index, agent, self.pop) for agent_index, agent in enumerate(self.pop)]
             with multiprocessing.Pool(processes=self.NCPU) as pool:
-                pool.starmap(self.differential_evolution, agents)
-
+                self.pop = pool.starmap(self.differential_evolution, agents)
             self.hof.update(self.pop)
 
         best_individual = self.hof[0]

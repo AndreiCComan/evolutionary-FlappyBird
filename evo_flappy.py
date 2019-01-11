@@ -1,7 +1,7 @@
 from util.trivial import log_flappy_bird
 log_flappy_bird()
 
-from FlappyBirdClone.flappy import play_with_screen
+import FlappyBirdClone.flappy_screen as flappy_screen
 
 import argparse
 import torch
@@ -22,6 +22,7 @@ def main():
     parser.add_argument("--DEVICE", type = str, default = "cpu", help = "Device on which to rung the PyTorch model")
     parser.add_argument("--MODE_AGENT", default = False, action = "store_true", help = "Activate agent mode")
     parser.add_argument("--MODE_LEARN", default = False, action = "store_true", help = "Activate agent learn mode")
+    parser.add_argument("--MODE_NO_SCREEN", default=False, action="store_true", help="Disable screen")
     parser.add_argument("--NCPU", type = int, default = 1, help="Number of CPUs")
 
     args = parser.parse_args()
@@ -32,14 +33,14 @@ def main():
 
     if not MODE_AGENT:
 
-        play_with_screen(mode_agent = MODE_AGENT)
+        flappy_screen.play(mode_agent = MODE_AGENT)
 
     elif MODE_AGENT and not MODE_LEARN:
 
         agent = evolutionary.TorchModel(args)
         agent.model.load_state_dict(torch.load("model.pt"))
         model = agent.model.double()
-        play_with_screen(mode_agent = MODE_AGENT, model = model)
+        flappy_screen.play(mode_agent = MODE_AGENT, model = model)
 
     else:
 
@@ -55,7 +56,7 @@ def main():
         # Save the best model on file and run it
         torch.save(agent.model.state_dict(), "model.pt")
 
-        play_with_screen(mode_agent = MODE_AGENT, model = agent.model)
+        flappy_screen.play(mode_agent = MODE_AGENT, model = agent.model)
 
 
 if __name__ == "__main__":
