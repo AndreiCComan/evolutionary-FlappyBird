@@ -123,7 +123,7 @@ class TorchModel(EvolutionaryModel):
         assert self.MODE_AGENT
 
         for _ in tqdm(range(self.NGEN), total=self.NGEN):
-            agents = [(agent, self.pop) for agent_index, agent in self.pop]
+            agents = [(agent, self.pop) for agent in self.pop]
             with multiprocessing.Pool(processes=self.NCPU) as pool:
                 self.pop = pool.starmap(self.differential_evolution, agents)
             self.hof.update(self.pop)
