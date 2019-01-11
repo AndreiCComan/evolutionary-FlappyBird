@@ -97,7 +97,7 @@ class TorchModel(EvolutionaryModel):
 
         return score
 
-    def differential_evolution(self, index_agent, agent, population):
+    def differential_evolution(self, agent, population):
         a, b, c = self.toolbox.select(population)
         y = self.toolbox.clone(agent)
         index = random.randrange(len(agent))
@@ -123,7 +123,7 @@ class TorchModel(EvolutionaryModel):
         assert self.MODE_AGENT
 
         for _ in tqdm(range(self.NGEN), total=self.NGEN):
-            agents = [(agent_index, agent, self.pop) for agent_index, agent in enumerate(self.pop)]
+            agents = [(agent, self.pop) for agent_index, agent in self.pop]
             with multiprocessing.Pool(processes=self.NCPU) as pool:
                 self.pop = pool.starmap(self.differential_evolution, agents)
             self.hof.update(self.pop)
