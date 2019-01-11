@@ -56,7 +56,7 @@ def main():
         # Save the best model on file and run it
         torch.save(agent.model.state_dict(), "model.pt")
 
-        flappy_screen.play(mode_agent = MODE_AGENT, model = agent.model)
+        #flappy_screen.play(mode_agent = MODE_AGENT, model = agent.model)
 
 
 if __name__ == "__main__":
