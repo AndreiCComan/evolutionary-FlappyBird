@@ -22,6 +22,7 @@ def main():
     parser.add_argument("--DEVICE", type = str, default = "cpu", help = "Device on which to rung the PyTorch model")
     parser.add_argument("--MODE_AGENT", default = False, action = "store_true", help = "Activate agent mode")
     parser.add_argument("--MODE_LEARN", default = False, action = "store_true", help = "Activate agent learn mode")
+    parser.add_argument("--NCPU", type = int, default = 1, help="Number of CPUs")
 
     args = parser.parse_args()
 

@@ -8,9 +8,10 @@ import torch.nn as nn
 import numpy as np
 
 import logging
-import multiprocessing
+logging.getLogger().setLevel(logging.INFO)
 
 import random
+import multiprocessing
 
 from FlappyBirdClone.flappy import play_with_screen
 
@@ -29,6 +30,7 @@ class EvolutionaryModel:
         self.DEVICE = args.DEVICE
         self.MODE_AGENT = args.MODE_AGENT
         self.MODE_LEARN = args.MODE_LEARN
+        self.NCPU = args.NCPU
 
     def create_model(self, device):
         pass
@@ -48,11 +50,21 @@ Simple EA which evolves the weights of a PyTorch Feed-Foward Neural Network.
 class TorchModel(EvolutionaryModel):
 
     def __init__(self, args):
+        EvolutionaryModel.__init__(self, args)
+
         creator.create("FitnessMax", base.Fitness, weights=(1.0,))
         creator.create("Individual", np.ndarray, fitness=creator.FitnessMax)
-        EvolutionaryModel.__init__(self, args)
-        logging.info("Creating Neural Network model")
+
         self.model = self.create_model(self.DEVICE)
+
+        self.toolbox = base.Toolbox()
+        self.toolbox.register("individual", self.generate_individual, creator.Individual, self.model)
+        self.toolbox.register("population", tools.initRepeat, list, self.toolbox.individual)
+        self.toolbox.register("select", tools.selRandom, k=3)
+        self.toolbox.register("evaluate", self.evaluate_individual, self.model)
+
+        self.pop = self.toolbox.population(n=self.MU)
+        self.hof = tools.HallOfFame(1, similar=np.array_equal)
 
     def create_model(self, device):
         model = nn.Sequential(nn.Linear(3, 4), nn.ReLU(), nn.Linear(4, 2), nn.LogSoftmax(dim=0))
@@ -78,40 +90,38 @@ class TorchModel(EvolutionaryModel):
 
         return play_with_screen(self.MODE_AGENT, self.MODE_LEARN, model=model)
 
+    def differential_evolution(self, index_agent, agent):
+        a, b, c = self.toolbox.select(self.pop)
+        y = self.toolbox.clone(agent)
+        index = random.randrange(len(agent))
+
+        for i, value in enumerate(agent):
+            if i == index or random.random() < self.CR:
+                y[i] = a[i] + self.F * (b[i] - c[i])
+
+        #for layer_index, layer_weights in enumerate(y):
+        #    index = random.randrange(layer_weights.shape[0])
+        #    for i, value in enumerate(layer_weights):
+        #        if i == index or random.random() < self.CR:
+        #            y[layer_index][i] = a[layer_index][i] + self.F * (b[layer_index][i] - c[layer_index][i])
+
+        y.fitness.values = self.toolbox.evaluate(y)
+        if y.fitness > agent.fitness:
+            self.pop[index_agent] = y
+        return
+
     def evolve(self):
 
         assert self.MODE_AGENT
 
-        toolbox = base.Toolbox()
-        toolbox.register("individual", self.generate_individual, creator.Individual, self.model)
-        toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-        toolbox.register("select", tools.selRandom, k=3)
-        toolbox.register("evaluate", self.evaluate_individual, self.model)
-
-        pop = toolbox.population(n=self.MU)
-        hof = tools.HallOfFame(1, similar=np.array_equal)
-
         for _ in tqdm(range(1, self.NGEN), total=self.NGEN):
-            for index_agent, agent in tqdm(enumerate(pop), total=len(pop)):
-                a, b, c = toolbox.select(pop)
-                y = toolbox.clone(agent)
-                index = random.randrange(len(agent))
-                for i, value in enumerate(agent):
-                    if i == index or random.random() < self.CR:
-                        y[i] = a[i] + self.F * (b[i] - c[i])
-                y.fitness.values = toolbox.evaluate(y)
-                #for layer_index, layer_weights in enumerate(y):
-                #    index = random.randrange(layer_weights.shape[0])
-                #    for i, value in enumerate(layer_weights):
-                #        if i == index or random.random() < self.CR:
-                #            y[layer_index][i] = a[layer_index][i] + self.F * (b[layer_index][i] - c[layer_index][i])
-                #y.fitness.values = toolbox.evaluate(y)
-                if y.fitness > agent.fitness:
-                    pop[index_agent] = y
-            hof.update(pop)
+            agents = [(agent_index, agent) for agent_index, agent in enumerate(self.pop)]
+            with multiprocessing.Pool(processes=self.NCPU) as pool:
+                pool.starmap(self.differential_evolution, agents)
 
-        best_individual = hof[0]
+            self.hof.update(self.pop)
 
+        best_individual = self.hof[0]
         for parameter, numpy_array in zip(self.model.parameters(), best_individual):
             parameter.data = torch.from_numpy(numpy_array)
 
