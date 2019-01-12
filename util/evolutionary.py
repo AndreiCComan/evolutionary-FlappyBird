@@ -153,6 +153,7 @@ class NEATModel(EvolutionaryModel):
         self.config = config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
                              neat.DefaultSpeciesSet, neat.DefaultStagnation,
                              config_path)
+        self.model = ''
 
     def create_network(self, genome, config):
         return neat.nn.FeedForwardNetwork.create(genome, config)
@@ -175,10 +176,9 @@ class NEATModel(EvolutionaryModel):
         pop.add_reporter(neat.StdOutReporter(True))
 
         pe = neat.ParallelEvaluator(self.NCPU, self.evaluate_genome)
-        self.winner = pop.run(pe.evaluate)
-
-        return self.winner
+        winner = pop.run(pe.evaluate, self.NGEN)
+        self.model = neat.nn.FeedForwardNetwork.create(winner, self.config)
 
     def save(self):
-        with open('winner-feedforward', 'wb') as f:
-            pickle.dump(self.winner, f)
+        with open('model-neat.pt', 'wb') as f:
+            pickle.dump(self.model, f)
