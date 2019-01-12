@@ -3,6 +3,7 @@ log_flappy_bird()
 
 import FlappyBirdClone.flappy_screen as flappy_screen
 
+import os
 import argparse
 import torch
 import logging
@@ -46,7 +47,9 @@ def main():
 
         # Generate the model based on the type of EA
         if (EA == "NEAT"):
-            agent = evolutionary.NEATModel(args)
+            local_dir = os.path.dirname(__file__)
+            config_path = os.path.join(local_dir, 'config-feedforward')
+            agent = evolutionary.NEATModel(args, config_path)
         else:
             agent = evolutionary.TorchModel(args)
 
@@ -54,7 +57,7 @@ def main():
         agent.evolve()
 
         # Save the best model on file and run it
-        torch.save(agent.model.state_dict(), "model.pt")
+        agent.save()
 
         #flappy_screen.play(mode_agent = MODE_AGENT, model = agent.model)
 
