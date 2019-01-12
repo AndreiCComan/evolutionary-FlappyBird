@@ -51,8 +51,14 @@ PIPES_LIST = (
     'FlappyBirdClone/assets/sprites/pipe-red.png',
 )
 
+def next_action(features, model, type):
+    if (type=="NEAT"):
+        return np.argmax(model.activate(features))
+    else:
+        output_tensor = model(torch.tensor(features, dtype=torch.double))
+        return torch.argmax(output_tensor).item()
 
-def play(mode_agent = False, mode_learn = False, model = None):
+def play(mode_agent = False, mode_learn = False, model = None, ea_type="SIMPLE"):
     global MODE_AGENT, MODE_LEARN, MODEL
 
     MODE_AGENT = mode_agent
@@ -141,7 +147,7 @@ def play(mode_agent = False, mode_learn = False, model = None):
         )
 
         movementInfo = showWelcomeAnimation()
-        crashInfo = mainGame(movementInfo)
+        crashInfo = mainGame(movementInfo, ea_type)
         showGameOverScreen(crashInfo)
 
         if (MODE_AGENT and MODE_LEARN) or (MODE_AGENT and crashInfo["score"] > SCORE_LIMIT):
@@ -209,7 +215,7 @@ def showWelcomeAnimation():
         FPSCLOCK.tick(FPS)
 
 
-def mainGame(movementInfo):
+def mainGame(movementInfo, ea_type):
     score = playerIndex = loopIter = check = 0
     playerIndexGen = movementInfo['playerIndexGen']
     playerx, playery = int(SCREENWIDTH * 0.2), movementInfo['playery']
@@ -266,8 +272,7 @@ def mainGame(movementInfo):
 
             features = [-playerx + myPipe['x'], - playery + myPipe['y'], playerVelY]
             features = np.array(features, dtype = float)
-            output_tensor = MODEL(torch.tensor(features, dtype = torch.double))
-            jump = torch.argmax(output_tensor).item()
+            jump = next_action(features, MODEL, ea_type)
             if jump:
                 if playery > -2 * IMAGES['player'][0].get_height():
                     playerVelY = playerFlapAcc

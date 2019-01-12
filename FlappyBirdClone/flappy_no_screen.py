@@ -23,8 +23,14 @@ PLAYER = [34, 24]
 BASE = [336, 112]
 BACKGROUND = [288, 512]
 
+def next_action(features, model, type):
+    if (type=="NEAT"):
+        return np.argmax(model.activate(features))
+    else:
+        output_tensor = model(torch.tensor(features, dtype=torch.double))
+        return torch.argmax(output_tensor).item()
 
-def play(model = None):
+def play(model = None, ea_type="SIMPLE"):
     global HITMASKS, MODEL
 
     MODEL = model
@@ -37,7 +43,7 @@ def play(model = None):
 
     while True:
         movementInfo = showWelcomeAnimation()
-        crashInfo = mainGame(movementInfo)
+        crashInfo = mainGame(movementInfo, ea_type)
 
         return crashInfo["check"],
 
@@ -61,7 +67,7 @@ def showWelcomeAnimation():
     }
 
 
-def mainGame(movementInfo):
+def mainGame(movementInfo, ea_type):
     score = playerIndex = loopIter = check = 0
     playerIndexGen = movementInfo['playerIndexGen']
     playerx, playery = int(SCREENWIDTH * 0.2), movementInfo['playery']
@@ -107,8 +113,7 @@ def mainGame(movementInfo):
 
         features = [-playerx + myPipe['x'], - playery + myPipe['y'], playerVelY]
         features = np.array(features, dtype = float)
-        output_tensor = MODEL(torch.tensor(features, dtype = torch.double))
-        jump = torch.argmax(output_tensor).item()
+        jump = next_action(features, MODEL, ea_type)
         if jump:
             if playery > -2 * PLAYER[IM_HEIGHT]:
                 playerVelY = playerFlapAcc

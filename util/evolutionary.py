@@ -12,10 +12,12 @@ logging.getLogger().setLevel(logging.INFO)
 
 import random
 import multiprocessing
+import pickle
 
 import FlappyBirdClone.flappy_screen as flappy_screen
 import FlappyBirdClone.flappy_no_screen as flappy_no_screen
 
+import neat
 
 """
 Base class for the evolutionary methods which will be used in order
@@ -24,6 +26,7 @@ to evolve flappy.
 class EvolutionaryModel:
 
     def __init__(self, args):
+        self.EA = args.EA
         self.CR = args.CR
         self.F = args.F
         self.MU = args.MU
@@ -44,6 +47,9 @@ class EvolutionaryModel:
         pass
 
     def evolve(self):
+        pass
+
+    def save(self):
         pass
 
 """
@@ -91,9 +97,9 @@ class TorchModel(EvolutionaryModel):
             parameter.data = torch.from_numpy(numpy_array)
 
         if not self.MODE_NO_SCREEN:
-            score = flappy_screen.play(self.MODE_AGENT, self.MODE_LEARN, model=model)
+            score = flappy_screen.play(self.MODE_AGENT, self.MODE_LEARN, self.model, self.EA)
         else:
-            score = flappy_no_screen.play(model)
+            score = flappy_no_screen.play(model, self.EA)
 
         return score
 
@@ -132,11 +138,47 @@ class TorchModel(EvolutionaryModel):
         for parameter, numpy_array in zip(self.model.parameters(), best_individual):
             parameter.data = torch.from_numpy(numpy_array)
 
+    def save(self):
+        torch.save(self.model.state_dict(), "model.pt")
+
 
 """
 EA which uses NEAT to evolve an entire Neural-Network
 """
 class NEATModel(EvolutionaryModel):
     
-    def __init__(self, args):
+    def __init__(self, args, config_path):
         EvolutionaryModel.__init__(self, args)
+
+        self.config = config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
+                             neat.DefaultSpeciesSet, neat.DefaultStagnation,
+                             config_path)
+
+    def create_network(self, genome, config):
+        return neat.nn.FeedForwardNetwork.create(genome, config)
+
+    def evaluate_genome(self, genome, config):
+        self.model = self.create_network(genome, config)
+
+        if not self.MODE_NO_SCREEN:
+            score = flappy_screen.play(self.MODE_AGENT, self.MODE_LEARN, self.model, self.EA)
+        else:
+            score = flappy_no_screen.play(self.model, self.EA)
+
+        return score[0]
+
+    def evolve(self):
+
+        pop = neat.Population(self.config)
+        stats = neat.StatisticsReporter()
+        pop.add_reporter(stats)
+        pop.add_reporter(neat.StdOutReporter(True))
+
+        pe = neat.ParallelEvaluator(self.NCPU, self.evaluate_genome)
+        self.winner = pop.run(pe.evaluate)
+
+        return self.winner
+
+    def save(self):
+        with open('winner-feedforward', 'wb') as f:
+            pickle.dump(self.winner, f)
