@@ -11,11 +11,12 @@ logging.getLogger().setLevel(logging.INFO)
 
 from util import evolutionary
 
+import pickle
 
 def main():
 
     parser = argparse.ArgumentParser("evo_flappy.py")
-    parser.add_argument("--EA", type = str, default = "simple", help = "Type of Evolutionary algorithm which will be used.")
+    parser.add_argument("--EA", type = str, default = "simple", help = "Type of Evolutionary algorithm which will be used")
     parser.add_argument("--CR", type = float, default = 0.25, help = "Crossover probability")
     parser.add_argument("--F", type = float, default = 1, help = "Differential weight")
     parser.add_argument("--MU", type = int, default = 300, help = "Population size")
@@ -25,6 +26,7 @@ def main():
     parser.add_argument("--MODE_LEARN", default = False, action = "store_true", help = "Activate agent learn mode")
     parser.add_argument("--MODE_NO_SCREEN", default=False, action="store_true", help="Disable screen")
     parser.add_argument("--NCPU", type = int, default = 1, help="Number of CPUs")
+    parser.add_argument("--PLAY_BEST", default= False, action="store_true", help="Run the game with the best individual")
 
     args = parser.parse_args()
 
@@ -38,17 +40,22 @@ def main():
 
     elif MODE_AGENT and not MODE_LEARN:
 
-        agent = evolutionary.TorchModel(args)
-        agent.model.load_state_dict(torch.load("model.pt"))
-        model = agent.model.double()
-        flappy_screen.play(mode_agent = MODE_AGENT, model = model)
+        if (EA!="NEAT"):
+            agent = evolutionary.TorchModel(args)
+            agent.model.load_state_dict(torch.load("model.pt"))
+            model = agent.model.double()
+        else:
+            with open('model-neat.pt', 'rb') as f:
+                model = pickle.load(f)
+
+        flappy_screen.play(mode_agent = MODE_AGENT, model = model, ea_type=EA)
 
     else:
 
         # Generate the model based on the type of EA
         if (EA == "NEAT"):
             local_dir = os.path.dirname(__file__)
-            config_path = os.path.join(local_dir, 'config-feedforward')
+            config_path = os.path.join(local_dir, 'config-feedforward-neat.conf')
             agent = evolutionary.NEATModel(args, config_path)
         else:
             agent = evolutionary.TorchModel(args)
@@ -59,7 +66,9 @@ def main():
         # Save the best model on file and run it
         agent.save()
 
-        #flappy_screen.play(mode_agent = MODE_AGENT, model = agent.model)
+        # Run the best
+        if args.PLAY_BEST:
+            flappy_screen.play(ea_type=EA, mode_agent = MODE_AGENT, model = agent.model)
 
 
 if __name__ == "__main__":
