@@ -53,11 +53,12 @@ class EvolutionaryModel:
         self.NCPU = args.NCPU
         self.MODE_NO_SCREEN = args.MODE_NO_SCREEN
         self.LOG_PERFORMANCE = args.LOG_PERFORMANCE
+        self.DIFFICULTY = args.DIFFICULTY
 
         # Set up the (global) file handler to which we will save things
         global file_handler
         if (self.LOG_PERFORMANCE):
-            file_handler = logging.FileHandler("./performance_{}_{}.csv".format(self.__str__(), self.NGEN))
+            file_handler = logging.FileHandler("./performance_{}_{}_{}_{}.csv".format(self.__str__(), self.NGEN, self.DIFFICULTY, self.MU))
             logger.addHandler(file_handler)
 
     def create_model(self, device):

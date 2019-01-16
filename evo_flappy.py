@@ -23,6 +23,7 @@ def main():
     parser.add_argument("--MU", type = int, default = 300, help = "Population size")
     parser.add_argument("--NGEN", type = int, default = 200, help = "Number of generations")
     parser.add_argument("--DEVICE", type = str, default = "cpu", help = "Device on which to rung the PyTorch model")
+    parser.add_argument("--DIFFICULTY", type=str, default="hard", help="Difficulty of the game.")
     parser.add_argument("--MODE_AGENT", default = False, action = "store_true", help = "Activate agent mode")
     parser.add_argument("--MODE_LEARN", default = False, action = "store_true", help = "Activate agent learn mode")
     parser.add_argument("--EXPERIMENTS", default = False, action = "store_true", help= "Execute experiments specified in the config file.")
@@ -63,18 +64,24 @@ def main():
         for a in args.algorithms:
             for d in args.difficulties:
                 for g in args.generations:
+                    for p in args.population_sizes:
 
-                    logging.info("[*] Evolve using algorithm {} with difficulty {} and total generations {}".format(a,d,g))
+                        logging.info("[*] Algorithm {}; Difficulty {}; Generations {}; Individuals {}".format(a,d,g,p))
 
-                    args.NGEN = int(g)
-                    if a == "NEAT":
-                        local_dir = os.path.dirname(__file__)
-                        config_path = os.path.join(local_dir, 'config-feedforward-neat.conf')
-                        agent = evolutionary.NEATModel(args, config_path)
-                    else:
-                        agent = evolutionary.TorchModel(args)
+                        args.DIFFICULTY = d
+                        args.NGEN = int(g)
+                        args.MU = int(p)
+                        args.EA = a
 
-                    agent.evolve()
+                        # Generate the model based on the type of EA
+                        if (a == "NEAT"):
+                            local_dir = os.path.dirname(__file__)
+                            config_path = os.path.join(local_dir, 'config-feedforward-neat.conf')
+                            agent = evolutionary.NEATModel(args, config_path)
+                        else:
+                            agent = evolutionary.TorchModel(args)
+
+                        agent.evolve()
 
     else:
 
@@ -87,11 +94,11 @@ def main():
         else:
             agent = evolutionary.TorchModel(args)
 
-            # Evolve the model
-            agent.evolve()
+        # Evolve the model
+        agent.evolve()
 
-            # Save the best model on file and run it
-            agent.save()
+        # Save the best model on file and run it
+        agent.save()
 
         # Run the best
         if args.PLAY_BEST:

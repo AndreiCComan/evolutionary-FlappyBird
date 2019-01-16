@@ -10,6 +10,7 @@ class ExperimentParser:
     def parse(self):
         self.args.algorithms = self.getlist(self.parser["Default"]["algorithms"])
         self.args.difficulties = self.getlist(self.parser["Default"]["difficulties"])
+        self.args.population_sizes = self.getlist(self.parser["Default"]["population_sizes"])
         self.args.generations = self.getlist(self.parser["Default"]["generations"])
         return self.args
 
