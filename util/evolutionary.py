@@ -52,11 +52,13 @@ class EvolutionaryModel:
         self.MODE_LEARN = args.MODE_LEARN
         self.NCPU = args.NCPU
         self.MODE_NO_SCREEN = args.MODE_NO_SCREEN
+        self.LOG_PERFORMANCE = args.LOG_PERFORMANCE
 
         # Set up the (global) file handler to which we will save things
         global file_handler
-        file_handler = logging.FileHandler("./performance_{}_{}.csv".format(self.__str__(), self.NGEN))
-        logger.addHandler(file_handler)
+        if (self.LOG_PERFORMANCE):
+            file_handler = logging.FileHandler("./performance_{}_{}.csv".format(self.__str__(), self.NGEN))
+            logger.addHandler(file_handler)
 
     def create_model(self, device):
         pass
@@ -80,7 +82,8 @@ class EvolutionaryModel:
     # to run several time the experiments while changing the final
     # output file.
     def remove_handler(self):
-        logger.removeHandler(file_handler)
+        if self.LOG_PERFORMANCE:
+            logger.removeHandler(file_handler)
 
 """
 Simple EA which evolves the weights of a PyTorch Feed-Foward Neural Network.

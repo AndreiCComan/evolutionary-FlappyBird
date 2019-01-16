@@ -27,6 +27,7 @@ def main():
     parser.add_argument("--MODE_NO_SCREEN", default=False, action="store_true", help="Disable screen")
     parser.add_argument("--NCPU", type = int, default = 1, help="Number of CPUs")
     parser.add_argument("--PLAY_BEST", default= False, action="store_true", help="Run the game with the best individual")
+    parser.add_argument("--LOG_PERFORMANCE", default=False, action="store_true", help="Log some performance informations to files.")
 
     args = parser.parse_args()
 
