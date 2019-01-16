@@ -1,3 +1,4 @@
+from util.ExperimentParser import ExperimentParser
 from util.trivial import log_flappy_bird
 log_flappy_bird()
 
@@ -24,6 +25,7 @@ def main():
     parser.add_argument("--DEVICE", type = str, default = "cpu", help = "Device on which to rung the PyTorch model")
     parser.add_argument("--MODE_AGENT", default = False, action = "store_true", help = "Activate agent mode")
     parser.add_argument("--MODE_LEARN", default = False, action = "store_true", help = "Activate agent learn mode")
+    parser.add_argument("--EXPERIMENTS", default = False, action = "store_true", help= "Execute experiments specified in the config file.")
     parser.add_argument("--MODE_NO_SCREEN", default=False, action="store_true", help="Disable screen")
     parser.add_argument("--NCPU", type = int, default = 1, help="Number of CPUs")
     parser.add_argument("--PLAY_BEST", default= False, action="store_true", help="Run the game with the best individual")
@@ -51,7 +53,31 @@ def main():
 
         flappy_screen.play(mode_agent = MODE_AGENT, model = model, ea_type=EA)
 
+    elif args.EXPERIMENTS:
+        exp_parser = ExperimentParser(args, "./experiments.conf")
+
+        args = exp_parser.parse()
+
+        # For each possible algorithm, difficulties and generation,
+        # train a model
+        for a in args.algorithms:
+            for d in args.difficulties:
+                for g in args.generations:
+
+                    logging.info("[*] Evolve using algorithm {} with difficulty {} and total generations {}".format(a,d,g))
+
+                    args.NGEN = int(g)
+                    if a == "NEAT":
+                        local_dir = os.path.dirname(__file__)
+                        config_path = os.path.join(local_dir, 'config-feedforward-neat.conf')
+                        agent = evolutionary.NEATModel(args, config_path)
+                    else:
+                        agent = evolutionary.TorchModel(args)
+
+                    agent.evolve()
+
     else:
+
 
         # Generate the model based on the type of EA
         if (EA == "NEAT"):
@@ -61,11 +87,11 @@ def main():
         else:
             agent = evolutionary.TorchModel(args)
 
-        # Evolve the model
-        agent.evolve()
+            # Evolve the model
+            agent.evolve()
 
-        # Save the best model on file and run it
-        agent.save()
+            # Save the best model on file and run it
+            agent.save()
 
         # Run the best
         if args.PLAY_BEST:
