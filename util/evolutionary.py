@@ -168,6 +168,9 @@ class TorchModel(EvolutionaryModel):
         for parameter, numpy_array in zip(self.model.parameters(), best_individual):
             parameter.data = torch.from_numpy(numpy_array)
 
+
+        logger.removeHandler(file_handler)
+
     def save(self):
         torch.save(self.model.state_dict(), "model.pt")
 
@@ -214,6 +217,8 @@ class NEATModel(EvolutionaryModel):
         counter = 0
         for e in stats.get_fitness_mean():
             logger.info(str(counter) + "," + str(e))
+
+        logger.removeHandler(file_handler)
 
     def save(self):
         with open('model-neat.pt', 'wb') as f:
