@@ -11,7 +11,6 @@ FPS = 60
 SCREENWIDTH  = 288
 SCREENHEIGHT = 512
 # amount by which base can maximum shift to left
-PIPEGAPSIZE  = 100 # gap between upper and lower part of pipe
 BASEY        = SCREENHEIGHT * 0.79
 # image, sound and hitmask  dicts
 IMAGES, SOUNDS, HITMASKS = {}, {}, {}
@@ -51,6 +50,7 @@ PIPES_LIST = (
     'FlappyBirdClone/assets/sprites/pipe-red.png',
 )
 
+
 def next_action(features, model, type):
     if (type=="NEAT"):
         return np.argmax(model.activate(features))
@@ -58,8 +58,16 @@ def next_action(features, model, type):
         output_tensor = model(torch.tensor(features, dtype=torch.double))
         return torch.argmax(output_tensor).item()
 
-def play(mode_agent = False, mode_learn = False, model = None, ea_type="SIMPLE"):
-    global MODE_AGENT, MODE_LEARN, MODEL
+
+def play(mode_agent = False, mode_learn = False, model = None, ea_type = None, difficulty = "hard"):
+    global MODE_AGENT, MODE_LEARN, MODEL, PIPEGAPSIZE
+
+    if difficulty == "easy":
+        PIPEGAPSIZE = 200
+    elif difficulty == "normal":
+        PIPEGAPSIZE = 150
+    else: # difficulty == "hard"
+        PIPEGAPSIZE = 100
 
     MODE_AGENT = mode_agent
     MODE_LEARN = mode_learn
@@ -216,6 +224,9 @@ def showWelcomeAnimation():
 
 
 def mainGame(movementInfo, ea_type):
+
+    assert ea_type is not None
+
     score = playerIndex = loopIter = check = 0
     playerIndexGen = movementInfo['playerIndexGen']
     playerx, playery = int(SCREENWIDTH * 0.2), movementInfo['playery']

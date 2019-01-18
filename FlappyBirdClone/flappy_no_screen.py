@@ -30,8 +30,15 @@ def next_action(features, model, type):
         output_tensor = model(torch.tensor(features, dtype=torch.double))
         return torch.argmax(output_tensor).item()
 
-def play(model = None, ea_type="SIMPLE"):
-    global HITMASKS, MODEL
+def play(model = None, ea_type = None, difficulty = "hard"):
+    global HITMASKS, MODEL, PIPEGAPSIZE
+
+    if difficulty == "easy":
+        PIPEGAPSIZE = 200
+    elif difficulty == "normal":
+        PIPEGAPSIZE = 150
+    else: # difficulty == "hard"
+        PIPEGAPSIZE = 100
 
     MODEL = model
 
@@ -68,6 +75,9 @@ def showWelcomeAnimation():
 
 
 def mainGame(movementInfo, ea_type):
+
+    assert ea_type is not None
+
     score = playerIndex = loopIter = check = 0
     playerIndexGen = movementInfo['playerIndexGen']
     playerx, playery = int(SCREENWIDTH * 0.2), movementInfo['playery']

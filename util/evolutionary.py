@@ -54,12 +54,7 @@ class EvolutionaryModel:
         self.MODE_NO_SCREEN = args.MODE_NO_SCREEN
         self.LOG_PERFORMANCE = args.LOG_PERFORMANCE
         self.DIFFICULTY = args.DIFFICULTY
-
-        # Set up the (global) file handler to which we will save things
-        global file_handler
-        if (self.LOG_PERFORMANCE):
-            file_handler = logging.FileHandler("./performance_{}_{}_{}_{}.csv".format(self.__str__(), self.NGEN, self.DIFFICULTY, self.MU))
-            logger.addHandler(file_handler)
+        self.CONFIGURATION_TYPE = args.CONFIGURATION_TYPE
 
     def create_model(self, device):
         pass
@@ -94,6 +89,9 @@ class TorchModel(EvolutionaryModel):
     def __init__(self, args):
         EvolutionaryModel.__init__(self, args)
 
+        self.ARCHITECTURE = self.args.ARCHITECTURE
+        self.WEIGHTS_UPDATE = self.args.WEIGHTS_UPDATE
+
         creator.create("FitnessMax", base.Fitness, weights=(1.0,))
         creator.create("Individual", np.ndarray, fitness=creator.FitnessMax)
 
@@ -108,8 +106,29 @@ class TorchModel(EvolutionaryModel):
         self.pop = self.toolbox.population(n=self.MU)
         self.hof = tools.HallOfFame(1, similar=np.array_equal)
 
+        # Set up the (global) file handler to which we will save things
+        global file_handler
+
+        if self.LOG_PERFORMANCE:
+            file_handler = logging.FileHandler("EA_{}_DIFFICULTY_{}_NGEN_{}_MU_{}_ARCHITECTURE_{}_WEIGHTS_UPDATE_{}_performance.csv"
+                   .format(self.EA,
+                           self.DIFFICULTY,
+                           self.NGEN,
+                           self.MU,
+                           self.ARCHITECTURE,
+                           self.WEIGHTS_UPDATE))
+            logger.addHandler(file_handler)
+
     def create_model(self, device):
-        model = nn.Sequential(nn.Linear(3, 4), nn.ReLU(), nn.Linear(4, 2), nn.LogSoftmax(dim=0))
+        model = None
+
+        if self.ARCHITECTURE == "shallow":
+            model = nn.Sequential(nn.Linear(3, 4), nn.ReLU(), nn.Linear(4, 2), nn.LogSoftmax(dim=0))
+        elif self.ARCHITECTURE == "deep":
+            model = nn.Sequential(nn.Linear(3, 8), nn.ReLU(), nn.Linear(8, 4), nn.ReLU(), nn.Linear(4,2), nn.LogSoftmax(dim=0))
+
+        assert model is not None
+
         for parameter in model.parameters():
             parameter.requires_grad = False
         return model
@@ -131,9 +150,9 @@ class TorchModel(EvolutionaryModel):
             parameter.data = torch.from_numpy(numpy_array)
 
         if not self.MODE_NO_SCREEN:
-            score = flappy_screen.play(self.MODE_AGENT, self.MODE_LEARN, self.model, self.EA)
+            score = flappy_screen.play(self.MODE_AGENT, self.MODE_LEARN, self.model, self.EA, self.DIFFICULTY)
         else:
-            score = flappy_no_screen.play(model, self.EA)
+            score = flappy_no_screen.play(model, self.EA, self.DIFFICULTY)
 
         return score
 
@@ -142,15 +161,16 @@ class TorchModel(EvolutionaryModel):
         y = self.toolbox.clone(agent)
         index = random.randrange(len(agent))
 
-        for i, value in enumerate(agent):
-            if i == index or random.random() < self.CR:
-                y[i] = a[i] + self.F * (b[i] - c[i])
-
-        #for layer_index, layer_weights in enumerate(y):
-        #    index = random.randrange(layer_weights.shape[0])
-        #    for i, value in enumerate(layer_weights):
-        #        if i == index or random.random() < self.CR:
-        #            y[layer_index][i] = a[layer_index][i] + self.F * (b[layer_index][i] - c[layer_index][i])
+        if self.WEIGHTS_UPDATE == "shallow":
+            for i, value in enumerate(agent):
+                if i == index or random.random() < self.CR:
+                    y[i] = a[i] + self.F * (b[i] - c[i])
+        else: # self.WEIGHTS_UPDATE == "normal"
+            for layer_index, layer_weights in enumerate(y):
+                index = random.randrange(layer_weights.shape[0])
+                for i, value in enumerate(layer_weights):
+                    if i == index or random.random() < self.CR:
+                        y[layer_index][i] = a[layer_index][i] + self.F * (b[layer_index][i] - c[layer_index][i])
 
         y.fitness.values = self.toolbox.evaluate(y)
         if y.fitness > agent.fitness:
@@ -172,18 +192,25 @@ class TorchModel(EvolutionaryModel):
         for parameter, numpy_array in zip(self.model.parameters(), best_individual):
             parameter.data = torch.from_numpy(numpy_array)
 
-
         logger.removeHandler(file_handler)
 
     def save(self):
-        torch.save(self.model.state_dict(), "model.pt")
+        torch.save(self.model.state_dict(), "EA_{}_DIFFICULTY_{}_NGEN_{}_MU_{}_ARCHITECTURE_{}_WEIGHTS_UPDATE_{}_model.pt"
+                   .format(self.EA,
+                           self.DIFFICULTY,
+                           self.NGEN,
+                           self.MU,
+                           self.ARCHITECTURE,
+                           self.WEIGHTS_UPDATE))
 
 
 """
 EA which uses NEAT to evolve an entire Neural-Network
 """
 class NEATModel(EvolutionaryModel):
-    
+
+    # TODO modify things here as DE
+
     def __init__(self, args, config_path):
         EvolutionaryModel.__init__(self, args)
 
