@@ -89,8 +89,8 @@ class TorchModel(EvolutionaryModel):
     def __init__(self, args):
         EvolutionaryModel.__init__(self, args)
 
-        self.ARCHITECTURE = self.args.ARCHITECTURE
-        self.WEIGHTS_UPDATE = self.args.WEIGHTS_UPDATE
+        self.ARCHITECTURE = args.ARCHITECTURE
+        self.WEIGHTS_UPDATE = args.WEIGHTS_UPDATE
 
         creator.create("FitnessMax", base.Fitness, weights=(1.0,))
         creator.create("Individual", np.ndarray, fitness=creator.FitnessMax)
@@ -214,10 +214,32 @@ class NEATModel(EvolutionaryModel):
     def __init__(self, args, config_path):
         EvolutionaryModel.__init__(self, args)
 
-        self.config = config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
+        self.config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
                              neat.DefaultSpeciesSet, neat.DefaultStagnation,
                              config_path)
+
         self.model = ''
+
+        self.ELITISM = bool(args.ELITISM)
+        self.HIDDEN_LAYER_SIZE = int(args.HIDDEN_LAYER_SIZE)
+
+        self.config.pop_size = args.MU
+        self.config.reproduction_config.elitism = self.ELITISM
+        self.config.genome_config.num_hidden = self.HIDDEN_LAYER_SIZE
+
+        # Set up the (global) file handler to which we will save things
+        global file_handler
+
+        if self.LOG_PERFORMANCE:
+            file_handler = logging.FileHandler(
+                "EA_{}_DIFFICULTY_{}_NGEN_{}_MU_{}_ELITISM_{}_HIDDEN_SIZE_{}_performance.csv"
+                .format(self.EA,
+                        self.DIFFICULTY,
+                        self.NGEN,
+                        self.MU,
+                        self.ELITISM,
+                        self.HIDDEN_LAYER_SIZE))
+            logger.addHandler(file_handler)
 
     def create_network(self, genome, config):
         return neat.nn.FeedForwardNetwork.create(genome, config)
@@ -226,9 +248,9 @@ class NEATModel(EvolutionaryModel):
         self.model = self.create_network(genome, config)
 
         if not self.MODE_NO_SCREEN:
-            score = flappy_screen.play(self.MODE_AGENT, self.MODE_LEARN, self.model, self.EA)
+            score = flappy_screen.play(self.MODE_AGENT, self.MODE_LEARN, self.model, self.EA, difficulty=self.DIFFICULTY)
         else:
-            score = flappy_no_screen.play(self.model, self.EA)
+            score = flappy_no_screen.play(self.model, self.EA, difficulty=self.DIFFICULTY)
 
         return score[0]
 
@@ -245,12 +267,19 @@ class NEATModel(EvolutionaryModel):
         winner = pop.run(pe.evaluate, self.NGEN)
         self.model = neat.nn.FeedForwardNetwork.create(winner, self.config)
 
-        counter = 0
+        counter = 1
         for e in stats.get_fitness_mean():
             logger.info(str(counter) + "," + str(e))
+            counter += 1
 
         logger.removeHandler(file_handler)
 
     def save(self):
-        with open('model-neat.pt', 'wb') as f:
+        with open("EA_{}_DIFFICULTY_{}_NGEN_{}_MU_{}_ELITISM_{}_HIDDEN_SIZE_{}_performance.pt"
+                .format(self.EA,
+                        self.DIFFICULTY,
+                        self.NGEN,
+                        self.MU,
+                        self.ELITISM,
+                        self.HIDDEN_LAYER_SIZE), 'wb') as f:
             pickle.dump(self.model, f)

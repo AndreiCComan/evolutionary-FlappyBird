@@ -62,10 +62,10 @@ def main():
 
         # For each possible algorithm, difficulties and generation,
         # train a model
-        for algorithm in args.algorithms:
-            for difficulty in args.difficulties:
-                for ngen in args.generations:
-                    for population_size in args.population_sizes:
+        for algorithm in args.ALGORITHMS:
+            for difficulty in args.DIFFICULTIES:
+                for ngen in args.GENERATIONS:
+                    for population_size in args.POPULATION_SIZES:
 
                         args.DIFFICULTY = difficulty
                         args.NGEN = int(ngen)
@@ -74,38 +74,37 @@ def main():
 
                         # Generate the model based on the type of EA
                         if (algorithm == "NEAT"):
-                            # TODO complete here as DE
-                            local_dir = os.path.dirname(__file__)
-                            config_path = os.path.join(local_dir, 'config-feedforward-neat.conf')
-                            agent = evolutionary.NEATModel(args, config_path)
+                            for eli in args.ELITISMS:
+                                for size_l in args.HIDDEN_LAYER_SIZES:
+                                    args.ELITISM = True if eli=="True" else False
+                                    args.HIDDEN_LAYER_SIZE = int(size_l)
+                                    logging.info(
+                                        "[*] Algorithm {}; Difficulty {}; Generations {}; Individuals {}; Elitism {}; Hidden Layer Size {}"
+                                            .format(args.EA,
+                                                    args.DIFFICULTY,
+                                                    args.NGEN,
+                                                    args.MU,
+                                                    args.ELITISM,
+                                                    args.HIDDEN_LAYER_SIZE))
+                                    local_dir = os.path.dirname(__file__)
+                                    config_path = os.path.join(local_dir, 'config-feedforward-neat.conf')
+                                    agent = evolutionary.NEATModel(args, config_path)
+                                    agent.evolve()
                         else:
-                            if args.CONFIGURATION_TYPE == "Default":
-                                args.ARCHITECTURE = "shallow"
-                                args.WEIGHTS_UPDATE = "shallow"
-                                logging.info("[*] Algorithm {}; Difficulty {}; Generations {}; Individuals {}; Architecture {}; Weights update {}"
-                                             .format(args.EA,
-                                                     args.DIFFICULTY,
-                                                     args.NGEN,
-                                                     args.MU,
-                                                     args.ARCHITECTURE,
-                                                     args.WEIGHTS_UPDATE))
-                                agent = evolutionary.TorchModel(args)
-                            else:
-                                for architecture in args.ARCHITECTURES:
-                                    for weights_update in args.WEIGHTS_UPDATES:
-                                        args.ARCHITECTURE = architecture
-                                        args.WEIGHTS_UPDATE = weights_update
-                                        logging.info(
-                                            "[*] Algorithm {}; Difficulty {}; Generations {}; Individuals {}; Architecture {}; Weights update {}"
+                            for architecture in args.ARCHITECTURES:
+                                for weights_update in args.WEIGHTS_UPDATES:
+                                    args.ARCHITECTURE = architecture
+                                    args.WEIGHTS_UPDATE = weights_update
+                                    logging.info(
+                                        "[*] Algorithm {}; Difficulty {}; Generations {}; Individuals {}; Architecture {}; Weights update {}"
                                             .format(args.EA,
                                                     args.DIFFICULTY,
                                                     args.NGEN,
                                                     args.MU,
                                                     args.ARCHITECTURE,
                                                     args.WEIGHTS_UPDATE))
-                                        agent = evolutionary.TorchModel(args)
-
-                        agent.evolve()
+                                    agent = evolutionary.TorchModel(args)
+                                    agent.evolve()
 
     else:
 
