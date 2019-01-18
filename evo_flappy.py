@@ -1,3 +1,4 @@
+from util.ExperimentParser import ExperimentParser
 from util.trivial import log_flappy_bird
 log_flappy_bird()
 
@@ -22,11 +23,14 @@ def main():
     parser.add_argument("--MU", type = int, default = 300, help = "Population size")
     parser.add_argument("--NGEN", type = int, default = 200, help = "Number of generations")
     parser.add_argument("--DEVICE", type = str, default = "cpu", help = "Device on which to rung the PyTorch model")
+    parser.add_argument("--DIFFICULTY", type=str, default="hard", help="Difficulty of the game.")
     parser.add_argument("--MODE_AGENT", default = False, action = "store_true", help = "Activate agent mode")
     parser.add_argument("--MODE_LEARN", default = False, action = "store_true", help = "Activate agent learn mode")
+    parser.add_argument("--EXPERIMENTS", default = False, action = "store_true", help= "Execute experiments specified in the config file.")
     parser.add_argument("--MODE_NO_SCREEN", default=False, action="store_true", help="Disable screen")
     parser.add_argument("--NCPU", type = int, default = 1, help="Number of CPUs")
     parser.add_argument("--PLAY_BEST", default= False, action="store_true", help="Run the game with the best individual")
+    parser.add_argument("--LOG_PERFORMANCE", default=False, action="store_true", help="Log some performance informations to files.")
 
     args = parser.parse_args()
 
@@ -50,7 +54,37 @@ def main():
 
         flappy_screen.play(mode_agent = MODE_AGENT, model = model, ea_type=EA)
 
+    elif args.EXPERIMENTS:
+        exp_parser = ExperimentParser(args, "./experiments.conf")
+
+        args = exp_parser.parse()
+
+        # For each possible algorithm, difficulties and generation,
+        # train a model
+        for a in args.algorithms:
+            for d in args.difficulties:
+                for g in args.generations:
+                    for p in args.population_sizes:
+
+                        logging.info("[*] Algorithm {}; Difficulty {}; Generations {}; Individuals {}".format(a,d,g,p))
+
+                        args.DIFFICULTY = d
+                        args.NGEN = int(g)
+                        args.MU = int(p)
+                        args.EA = a
+
+                        # Generate the model based on the type of EA
+                        if (a == "NEAT"):
+                            local_dir = os.path.dirname(__file__)
+                            config_path = os.path.join(local_dir, 'config-feedforward-neat.conf')
+                            agent = evolutionary.NEATModel(args, config_path)
+                        else:
+                            agent = evolutionary.TorchModel(args)
+
+                        agent.evolve()
+
     else:
+
 
         # Generate the model based on the type of EA
         if (EA == "NEAT"):

@@ -19,6 +19,22 @@ import FlappyBirdClone.flappy_no_screen as flappy_no_screen
 
 import neat
 
+# Custom logger for each of the objects. It has to be
+# a global variable since it is not serializable and it
+# cannot be saved inside the EvolutionaryModel objects.
+# By setting propagate to False we disable the standard
+# stdout output.
+global logger
+logger = logging.getLogger("performance_logger")
+logger.propagate = False
+
+# File handler used by the loggers. It has also to be global
+# because it is not serializable. It must be removed from
+# the logger once the evolve phase is finished.
+global file_handler
+file_handler = None
+
+
 """
 Base class for the evolutionary methods which will be used in order
 to evolve flappy.
@@ -36,6 +52,14 @@ class EvolutionaryModel:
         self.MODE_LEARN = args.MODE_LEARN
         self.NCPU = args.NCPU
         self.MODE_NO_SCREEN = args.MODE_NO_SCREEN
+        self.LOG_PERFORMANCE = args.LOG_PERFORMANCE
+        self.DIFFICULTY = args.DIFFICULTY
+
+        # Set up the (global) file handler to which we will save things
+        global file_handler
+        if (self.LOG_PERFORMANCE):
+            file_handler = logging.FileHandler("./performance_{}_{}_{}_{}.csv".format(self.__str__(), self.NGEN, self.DIFFICULTY, self.MU))
+            logger.addHandler(file_handler)
 
     def create_model(self, device):
         pass
@@ -51,6 +75,16 @@ class EvolutionaryModel:
 
     def save(self):
         pass
+
+    def __str__(self):
+        return self.__class__.__name__
+
+    # Remove the file handler from the logger. This will enable us
+    # to run several time the experiments while changing the final
+    # output file.
+    def remove_handler(self):
+        if self.LOG_PERFORMANCE:
+            logger.removeHandler(file_handler)
 
 """
 Simple EA which evolves the weights of a PyTorch Feed-Foward Neural Network.
@@ -138,6 +172,9 @@ class TorchModel(EvolutionaryModel):
         for parameter, numpy_array in zip(self.model.parameters(), best_individual):
             parameter.data = torch.from_numpy(numpy_array)
 
+
+        logger.removeHandler(file_handler)
+
     def save(self):
         torch.save(self.model.state_dict(), "model.pt")
 
@@ -170,6 +207,8 @@ class NEATModel(EvolutionaryModel):
 
     def evolve(self):
 
+        logger.info("generation, mean_fitness")
+
         pop = neat.Population(self.config)
         stats = neat.StatisticsReporter()
         pop.add_reporter(stats)
@@ -178,6 +217,12 @@ class NEATModel(EvolutionaryModel):
         pe = neat.ParallelEvaluator(self.NCPU, self.evaluate_genome)
         winner = pop.run(pe.evaluate, self.NGEN)
         self.model = neat.nn.FeedForwardNetwork.create(winner, self.config)
+
+        counter = 0
+        for e in stats.get_fitness_mean():
+            logger.info(str(counter) + "," + str(e))
+
+        logger.removeHandler(file_handler)
 
     def save(self):
         with open('model-neat.pt', 'wb') as f:
