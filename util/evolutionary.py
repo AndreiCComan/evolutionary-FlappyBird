@@ -54,7 +54,6 @@ class EvolutionaryModel:
         self.MODE_NO_SCREEN = args.MODE_NO_SCREEN
         self.LOG_PERFORMANCE = args.LOG_PERFORMANCE
         self.DIFFICULTY = args.DIFFICULTY
-        self.CONFIGURATION_TYPE = args.CONFIGURATION_TYPE
 
     def create_model(self, device):
         pass
@@ -122,6 +121,8 @@ class TorchModel(EvolutionaryModel):
     def create_model(self, device):
         model = None
 
+        assert self.ARCHITECTURE == "shallow" or self.ARCHITECTURE == "deep"
+
         if self.ARCHITECTURE == "shallow":
             model = nn.Sequential(nn.Linear(3, 4), nn.ReLU(), nn.Linear(4, 2), nn.LogSoftmax(dim=0))
         elif self.ARCHITECTURE == "deep":
@@ -160,6 +161,8 @@ class TorchModel(EvolutionaryModel):
         a, b, c = self.toolbox.select(population)
         y = self.toolbox.clone(agent)
         index = random.randrange(len(agent))
+
+        assert self.WEIGHTS_UPDATE == "shallow" or self.WEIGHTS_UPDATE == "normal"
 
         if self.WEIGHTS_UPDATE == "shallow":
             for i, value in enumerate(agent):

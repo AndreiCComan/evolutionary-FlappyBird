@@ -24,7 +24,6 @@ def main():
     parser.add_argument("--NGEN", type = int, default = 200, help = "Number of generations")
     parser.add_argument("--DEVICE", type = str, default = "cpu", help = "Device on which to rung the PyTorch model")
     parser.add_argument("--DIFFICULTY", type=str, default="hard", help="Difficulty of the game.")
-    parser.add_argument("--CONFIGURATION_TYPE", type=str, default="Default", help="Configuration type")
     parser.add_argument("--MODE_AGENT", default = False, action = "store_true", help = "Activate agent mode")
     parser.add_argument("--MODE_LEARN", default = False, action = "store_true", help = "Activate agent learn mode")
     parser.add_argument("--EXPERIMENTS", default = False, action = "store_true", help= "Execute experiments specified in the config file.")
@@ -90,6 +89,7 @@ def main():
                                     config_path = os.path.join(local_dir, 'config-feedforward-neat.conf')
                                     agent = evolutionary.NEATModel(args, config_path)
                                     agent.evolve()
+                                    agent.save()
                         else:
                             for architecture in args.ARCHITECTURES:
                                 for weights_update in args.WEIGHTS_UPDATES:
@@ -105,6 +105,7 @@ def main():
                                                     args.WEIGHTS_UPDATE))
                                     agent = evolutionary.TorchModel(args)
                                     agent.evolve()
+                                    agent.save()
 
     else:
 
@@ -114,6 +115,8 @@ def main():
             config_path = os.path.join(local_dir, 'config-feedforward-neat.conf')
             agent = evolutionary.NEATModel(args, config_path)
         else:
+            args.ARCHITECTURE = "shallow"
+            args.WEIGHTS_UPDATE = "shallow"
             agent = evolutionary.TorchModel(args)
 
         # Evolve the model
