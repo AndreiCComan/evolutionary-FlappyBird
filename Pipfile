@@ -11,6 +11,7 @@ torch = "*"
 pygame = "*"
 tqdm = "*"
 deap = "*"
+neat-python = "*"
 
 [requires]
 python_version = "3.6"
