@@ -209,8 +209,6 @@ EA which uses NEAT to evolve an entire Neural-Network
 """
 class NEATModel(EvolutionaryModel):
 
-    # TODO modify things here as DE
-
     def __init__(self, args, config_path):
         EvolutionaryModel.__init__(self, args)
 
@@ -275,7 +273,7 @@ class NEATModel(EvolutionaryModel):
         logger.removeHandler(file_handler)
 
     def save(self):
-        with open("EA_{}_DIFFICULTY_{}_NGEN_{}_MU_{}_ELITISM_{}_HIDDEN_SIZE_{}_performance.pt"
+        with open("EA_{}_DIFFICULTY_{}_NGEN_{}_MU_{}_ELITISM_{}_HIDDEN_SIZE_{}_model.pt"
                 .format(self.EA,
                         self.DIFFICULTY,
                         self.NGEN,
