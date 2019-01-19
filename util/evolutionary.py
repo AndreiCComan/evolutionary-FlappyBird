@@ -121,7 +121,7 @@ class TorchModel(EvolutionaryModel):
     def create_model(self, device):
         model = None
 
-        assert self.ARCHITECTURE == "shallow" or self.ARCHITECTURE == "deep" or self.ARCHITECTURE == "wide"
+        assert self.ARCHITECTURE == "shallow" or self.ARCHITECTURE == "deep" or self.ARCHITECTURE == "wide" or self.ARCHITECTURE == "wider"
 
         if self.ARCHITECTURE == "shallow":
             model = nn.Sequential(nn.Linear(3, 4), nn.ReLU(), nn.Linear(4, 2), nn.LogSoftmax(dim=0))
@@ -129,6 +129,8 @@ class TorchModel(EvolutionaryModel):
             model = nn.Sequential(nn.Linear(3, 8), nn.ReLU(), nn.Linear(8, 4), nn.ReLU(), nn.Linear(4,2), nn.LogSoftmax(dim=0))
         elif self.ARCHITECTURE == "wide":
             model = nn.Sequential(nn.Linear(3, 16), nn.ReLU(), nn.Linear(16, 2), nn.LogSoftmax(dim=0))
+        elif self.ARCHITECTURE == "wider":
+            model = nn.Sequential(nn.Linear(3, 32), nn.ReLU(), nn.Linear(32, 2), nn.LogSoftmax(dim=0))
 
         assert model is not None
 
