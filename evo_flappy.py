@@ -77,7 +77,7 @@ def main():
                         if (algorithm == "NEAT"):
                             for eli in args.ELITISMS:
                                 for size_l in args.HIDDEN_LAYER_SIZES:
-                                    args.ELITISM = True if eli=="True" else False
+                                    args.ELITISM = int(eli)
                                     args.HIDDEN_LAYER_SIZE = int(size_l)
                                     logging.info(
                                         "[*] Algorithm {}; Difficulty {}; Generations {}; Individuals {}; Elitism {}; Hidden Layer Size {}"

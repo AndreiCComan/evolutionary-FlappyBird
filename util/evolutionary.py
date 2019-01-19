@@ -232,7 +232,7 @@ class NEATModel(EvolutionaryModel):
 
         self.model = ''
 
-        self.ELITISM = bool(args.ELITISM)
+        self.ELITISM = int(args.ELITISM)
         self.HIDDEN_LAYER_SIZE = int(args.HIDDEN_LAYER_SIZE)
 
         self.config.pop_size = args.MU
