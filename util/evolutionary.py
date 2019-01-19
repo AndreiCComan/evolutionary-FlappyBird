@@ -109,7 +109,7 @@ class TorchModel(EvolutionaryModel):
         global file_handler
 
         if self.LOG_PERFORMANCE:
-            file_handler = logging.FileHandler("EA_{}_DIFFICULTY_{}_NGEN_{}_MU_{}_ARCHITECTURE_{}_WEIGHTS_UPDATE_{}_performance.csv"
+            file_handler = logging.FileHandler("./experiments/DE/EA_{}_DIFFICULTY_{}_NGEN_{}_MU_{}_ARCHITECTURE_{}_WEIGHTS_UPDATE_{}_performance.csv"
                    .format(self.EA,
                            self.DIFFICULTY,
                            self.NGEN,
@@ -185,11 +185,20 @@ class TorchModel(EvolutionaryModel):
 
         assert self.MODE_AGENT
 
-        for _ in tqdm(range(self.NGEN), total=self.NGEN):
+        logger.info("generation,mean_fitness")
+
+        for generation in tqdm(range(self.NGEN), total=self.NGEN):
             agents = [(agent, self.pop) for agent in self.pop]
             with multiprocessing.Pool(processes=self.NCPU) as pool:
                 self.pop = pool.starmap(self.differential_evolution, agents)
             self.hof.update(self.pop)
+
+            population_fitness = 0
+            for individual in self.pop:
+                population_fitness += individual.fitness.values[0]
+
+            logger.info("{},{}".format(generation, population_fitness / len(self.pop)))
+
 
         best_individual = self.hof[0]
         for parameter, numpy_array in zip(self.model.parameters(), best_individual):
@@ -198,7 +207,7 @@ class TorchModel(EvolutionaryModel):
         logger.removeHandler(file_handler)
 
     def save(self):
-        torch.save(self.model.state_dict(), "EA_{}_DIFFICULTY_{}_NGEN_{}_MU_{}_ARCHITECTURE_{}_WEIGHTS_UPDATE_{}_model.pt"
+        torch.save(self.model.state_dict(), "./experiments/DE/EA_{}_DIFFICULTY_{}_NGEN_{}_MU_{}_ARCHITECTURE_{}_WEIGHTS_UPDATE_{}_model.pt"
                    .format(self.EA,
                            self.DIFFICULTY,
                            self.NGEN,
@@ -233,7 +242,7 @@ class NEATModel(EvolutionaryModel):
 
         if self.LOG_PERFORMANCE:
             file_handler = logging.FileHandler(
-                "EA_{}_DIFFICULTY_{}_NGEN_{}_MU_{}_ELITISM_{}_HIDDEN_SIZE_{}_performance.csv"
+                "./experiments/NEAT/EA_{}_DIFFICULTY_{}_NGEN_{}_MU_{}_ELITISM_{}_HIDDEN_SIZE_{}_performance.csv"
                 .format(self.EA,
                         self.DIFFICULTY,
                         self.NGEN,
@@ -257,7 +266,7 @@ class NEATModel(EvolutionaryModel):
 
     def evolve(self):
 
-        logger.info("generation, mean_fitness")
+        logger.info("generation,mean_fitness")
 
         pop = neat.Population(self.config)
         stats = neat.StatisticsReporter()
@@ -276,7 +285,7 @@ class NEATModel(EvolutionaryModel):
         logger.removeHandler(file_handler)
 
     def save(self):
-        with open("EA_{}_DIFFICULTY_{}_NGEN_{}_MU_{}_ELITISM_{}_HIDDEN_SIZE_{}_model.pt"
+        with open("./experiments/NEAT/EA_{}_DIFFICULTY_{}_NGEN_{}_MU_{}_ELITISM_{}_HIDDEN_SIZE_{}_model.pt"
                 .format(self.EA,
                         self.DIFFICULTY,
                         self.NGEN,

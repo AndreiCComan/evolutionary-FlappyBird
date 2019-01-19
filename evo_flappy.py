@@ -17,7 +17,7 @@ import pickle
 def main():
 
     parser = argparse.ArgumentParser("evo_flappy.py")
-    parser.add_argument("--EA", type = str, default = "simple", help = "Type of Evolutionary algorithm which will be used")
+    parser.add_argument("--EA", type = str, default = None, help = "Type of Evolutionary algorithm which will be used")
     parser.add_argument("--CR", type = float, default = 0.25, help = "Crossover probability")
     parser.add_argument("--F", type = float, default = 1, help = "Differential weight")
     parser.add_argument("--MU", type = int, default = 300, help = "Population size")
@@ -45,6 +45,8 @@ def main():
     elif MODE_AGENT and not MODE_LEARN:
 
         if (EA!="NEAT"):
+            args.ARCHITECTURE = None
+            args.WEIGHTS_UPDATE = None
             agent = evolutionary.TorchModel(args)
             agent.model.load_state_dict(torch.load("model.pt"))
             model = agent.model.double()
@@ -52,7 +54,7 @@ def main():
             with open('model-neat.pt', 'rb') as f:
                 model = pickle.load(f)
 
-        flappy_screen.play(mode_agent = MODE_AGENT, model = model, ea_type=EA)
+        flappy_screen.play(mode_agent = MODE_AGENT, model = model, ea_type=EA, difficulty = args.DIFFICULTY)
 
     elif args.EXPERIMENTS:
         exp_parser = ExperimentParser(args, "./experiments.conf")
@@ -96,7 +98,7 @@ def main():
                                     args.ARCHITECTURE = architecture
                                     args.WEIGHTS_UPDATE = weights_update
                                     logging.info(
-                                        "[*] Algorithm {}; Difficulty {}; Generations {}; Individuals {}; Architecture {}; Weights update {}"
+                                        "[*] Algorithm {}; Difficulty {}; Generations {}; Individuals {}; Architecture {}; Weights Update {}"
                                             .format(args.EA,
                                                     args.DIFFICULTY,
                                                     args.NGEN,
