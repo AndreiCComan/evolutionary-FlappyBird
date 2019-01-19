@@ -268,7 +268,7 @@ class NEATModel(EvolutionaryModel):
 
     def evolve(self):
 
-        logger.info("generation,mean_fitness")
+        logger.info("generation,best_fitness,mean_fitness,median_fitness")
 
         pop = neat.Population(self.config)
         stats = neat.StatisticsReporter()
@@ -279,10 +279,11 @@ class NEATModel(EvolutionaryModel):
         winner = pop.run(pe.evaluate, self.NGEN)
         self.model = neat.nn.FeedForwardNetwork.create(winner, self.config)
 
-        counter = 1
-        for e in stats.get_fitness_mean():
-            logger.info(str(counter) + "," + str(e))
-            counter += 1
+        best_genomes = stats.most_fit_genomes
+        fitness_mean = stats.get_fitness_mean()
+        fitness_median = stats.get_fitness_median()
+        for e in range(0, self.NGEN):
+            logger.info("{},{},{},{}".format(e, best_genomes[e].fitness, fitness_mean[e], fitness_median[e]))
 
         logger.removeHandler(file_handler)
 
