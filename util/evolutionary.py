@@ -128,7 +128,7 @@ class TorchModel(EvolutionaryModel):
         elif self.ARCHITECTURE == "deep":
             model = nn.Sequential(nn.Linear(3, 8), nn.ReLU(), nn.Linear(8, 4), nn.ReLU(), nn.Linear(4,2), nn.LogSoftmax(dim=0))
         elif self.ARCHITECTURE == "wide":
-            model = nn.Sequential(nn.Linear(3, 16), nn.ReLU(), nn.Linear(4, 2), nn.LogSoftmax(dim=0))
+            model = nn.Sequential(nn.Linear(3, 16), nn.ReLU(), nn.Linear(16, 2), nn.LogSoftmax(dim=0))
 
         assert model is not None
 
