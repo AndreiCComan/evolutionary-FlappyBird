@@ -12,6 +12,7 @@ if __name__ == "__main__":
     parser.add_argument("--difficulty", nargs='+', default=["hard"], help="Filter results based on the difficulty.")
     parser.add_argument("--generations", type=int, default="100", help="Filter based on the number of generations.")
     parser.add_argument("--save", default=False, action="store_true", help="Save the plot to a file.")
+    parser.add_argument("--baseline", default=-1, type=int, help="Add a baseline to the plot.")
 
     args = parser.parse_args()
 
@@ -20,6 +21,7 @@ if __name__ == "__main__":
     algorithm = args.algorithms
     metric = args.metric
     gen = args.generations
+    baseline = args.baseline
 
     plt.figure(figsize=(10, 5))
 
@@ -45,6 +47,10 @@ if __name__ == "__main__":
 
                         label_name="{}_{}_{}_{}".format(a, components[3], components[9], components[12])
                         plt.plot(range(0, gen), df[metric], label=label_name)
+
+    # Add the baseline
+    if baseline != -1:
+        plt.plot(range(0, 100), [baseline for _ in range(0,100)], label="Baseline")
 
     plt.xlabel("Generations")
     plt.ylabel("Fitness")
