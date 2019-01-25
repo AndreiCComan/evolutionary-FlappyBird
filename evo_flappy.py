@@ -31,6 +31,7 @@ def main():
     parser.add_argument("--NCPU", type = int, default = 1, help="Number of CPUs")
     parser.add_argument("--PLAY_BEST", default= False, action="store_true", help="Run the game with the best individual")
     parser.add_argument("--LOG_PERFORMANCE", default=False, action="store_true", help="Log some performance informations to files.")
+    parser.add_argument("--MODEL_FILE", type=str, default="", help="Location of the pre-trained model we want to evalute.")
 
     args = parser.parse_args()
 
@@ -44,14 +45,19 @@ def main():
 
     elif MODE_AGENT and not MODE_LEARN:
 
+        if args.MODEL_FILE != "":
+            model_file = args.MODEL_FILE
+        else:
+            model_file = "model.pt" if EA != "NEAT" else "model-neat.pt"
+
         if (EA!="NEAT"):
-            args.ARCHITECTURE = None
-            args.WEIGHTS_UPDATE = None
+            args.ARCHITECTURE = "shallow"
+            args.WEIGHTS_UPDATE = "shallow"
             agent = evolutionary.TorchModel(args)
-            agent.model.load_state_dict(torch.load("model.pt"))
+            agent.model.load_state_dict(torch.load(model_file))
             model = agent.model.double()
         else:
-            with open('model-neat.pt', 'rb') as f:
+            with open(model_file, 'rb') as f:
                 model = pickle.load(f)
 
         flappy_screen.play(mode_agent = MODE_AGENT, model = model, ea_type=EA, difficulty = args.DIFFICULTY)
