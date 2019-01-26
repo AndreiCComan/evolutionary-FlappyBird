@@ -233,6 +233,7 @@ class NEATModel(EvolutionaryModel):
                              config_path)
 
         self.model = ''
+        self.winner = ''
 
         self.ELITISM = int(args.ELITISM)
         self.HIDDEN_LAYER_SIZE = int(args.HIDDEN_LAYER_SIZE)
@@ -278,8 +279,8 @@ class NEATModel(EvolutionaryModel):
         pop.add_reporter(neat.StdOutReporter(True))
 
         pe = neat.ParallelEvaluator(self.NCPU, self.evaluate_genome)
-        winner = pop.run(pe.evaluate, self.NGEN)
-        self.model = neat.nn.FeedForwardNetwork.create(winner, self.config)
+        self.winner = pop.run(pe.evaluate, self.NGEN)
+        self.model = neat.nn.FeedForwardNetwork.create(self.winner, self.config)
 
         best_genomes = stats.most_fit_genomes
         fitness_mean = stats.get_fitness_mean()
@@ -298,3 +299,11 @@ class NEATModel(EvolutionaryModel):
                         self.ELITISM,
                         self.HIDDEN_LAYER_SIZE), 'wb') as f:
             pickle.dump(self.model, f)
+        with open("./experiments/NEAT/EA_{}_DIFFICULTY_{}_NGEN_{}_MU_{}_ELITISM_{}_HIDDEN_SIZE_{}_network.pt"
+                          .format(self.EA,
+                                  self.DIFFICULTY,
+                                  self.NGEN,
+                                  self.MU,
+                                  self.ELITISM,
+                                  self.HIDDEN_LAYER_SIZE), 'wb') as f:
+            pickle.dump(self.winner, f)
